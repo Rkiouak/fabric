@@ -98,6 +98,8 @@ done)
 identity:
         principal: Admin@org1.net
         mspid: Org1MSP
-        privatekey: $(includefile build/nodes/cli/tls/server.key  "              ")
-        certificate: $(includefile build/nodes/cli/tls/server.crt  "              ")
+        tlsprivatekey: $(includefile build/nodes/cli/tls/server.key  "              ")
+        tlscertificate: $(includefile build/nodes/cli/tls/server.crt  "              ")
+        privatekey: $(includefile build/nodes/cli/msp/keystore/*_sk  "              ")
+        certificate: $(includefile build/nodes/cli/msp/signcerts/Admin@org1.net-cert.pem  "              ")
 EOF
