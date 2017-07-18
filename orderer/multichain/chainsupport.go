@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/fabric/orderer/common/blockcutter"
 	"github.com/hyperledger/fabric/orderer/common/broadcast"
 	"github.com/hyperledger/fabric/orderer/common/configtxfilter"
+	"github.com/hyperledger/fabric/orderer/common/deliver"
 	"github.com/hyperledger/fabric/orderer/common/filter"
 	"github.com/hyperledger/fabric/orderer/common/sigfilter"
 	"github.com/hyperledger/fabric/orderer/common/sizefilter"
@@ -80,23 +81,9 @@ type ConsenterSupport interface {
 
 // ChainSupport provides a wrapper for the resources backing a chain
 type ChainSupport interface {
-	// This interface is actually the union with the deliver.Support but because of a golang
-	// limitation https://github.com/golang/go/issues/6977 the methods must be explicitly declared
-
-	// PolicyManager returns the current policy manager as specified by the chain config
-	PolicyManager() policies.Manager
-
-	// Reader returns the chain Reader for the chain
-	Reader() ledger.Reader
-
-	// Errored returns whether the backing consenter has errored
-	Errored() <-chan struct{}
-
 	broadcast.Support
+	deliver.Support
 	ConsenterSupport
-
-	// Sequence returns the current config sequence number
-	Sequence() uint64
 
 	// ProposeConfigUpdate applies a CONFIG_UPDATE to an existing config to produce a *cb.ConfigEnvelope
 	ProposeConfigUpdate(env *cb.Envelope) (*cb.ConfigEnvelope, error)
@@ -168,7 +155,7 @@ func newChainSupport(
 func createStandardFilters(ledgerResources *ledgerResources) *filter.RuleSet {
 	return filter.NewRuleSet([]filter.Rule{
 		filter.EmptyRejectRule,
-		sizefilter.MaxBytesRule(ledgerResources.SharedConfig().BatchSize().AbsoluteMaxBytes),
+		sizefilter.MaxBytesRule(ledgerResources.SharedConfig()),
 		sigfilter.New(policies.ChannelWriters, ledgerResources.PolicyManager()),
 		configtxfilter.NewFilter(ledgerResources),
 		filter.AcceptRule,
@@ -180,7 +167,7 @@ func createStandardFilters(ledgerResources *ledgerResources) *filter.RuleSet {
 func createSystemChainFilters(ml *multiLedger, ledgerResources *ledgerResources) *filter.RuleSet {
 	return filter.NewRuleSet([]filter.Rule{
 		filter.EmptyRejectRule,
-		sizefilter.MaxBytesRule(ledgerResources.SharedConfig().BatchSize().AbsoluteMaxBytes),
+		sizefilter.MaxBytesRule(ledgerResources.SharedConfig()),
 		sigfilter.New(policies.ChannelWriters, ledgerResources.PolicyManager()),
 		newSystemChainFilter(ledgerResources, ml),
 		configtxfilter.NewFilter(ledgerResources),
